@@ -5,15 +5,17 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
 import me.chayut.SantaHelperLogic.EndPoint;
 import me.chayut.SantaHelperLogic.SantaHelperLogic;
+import me.zhenning.EmailSender;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -25,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
     boolean mBound = false;
 
     Button button1;
+    Button sendEmail;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,7 +44,25 @@ public class MainActivity extends AppCompatActivity {
         startService(intent);
 
         button1 = (Button) findViewById(R.id.btnTest1);
+        sendEmail = (Button) findViewById(R.id.btnSendEmail);
 
+        sendEmail.setOnClickListener(
+                new View.OnClickListener() {
+                    public void onClick(View v) {
+                    // TODO Auto-generated method stub
+                        sendEmail.setText("Sended");
+                        try {
+                            EmailSender sender = new EmailSender("zhenning.jiang2014@gmail.com", "");
+                            sender.sendMail("This is Subject",
+                                    "This is Body",
+                                    "zhenning.jiang2014@gmail.com",
+                                    "zhenning.jiang2014@gmail.com");
+                        } catch (Exception e) {
+                            Log.e("SendMail", e.getMessage(), e);
+                        }
+                    }
+                 }
+        );
     }
 
     @Override

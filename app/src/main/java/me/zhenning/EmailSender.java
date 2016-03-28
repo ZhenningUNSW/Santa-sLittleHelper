@@ -1,5 +1,7 @@
 package me.zhenning;
 
+import android.util.Log;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,6 +12,7 @@ import java.util.Properties;
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
 import javax.mail.Message;
+import javax.mail.Multipart;
 import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.Transport;
@@ -17,7 +20,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 /**
- * Created by user on 2016/3/27.
+ * Created by Zhenning Jiang on 2016/3/27.
  */
 public class EmailSender extends javax.mail.Authenticator {
     private String mailhost = "smtp.gmail.com";
@@ -25,6 +28,7 @@ public class EmailSender extends javax.mail.Authenticator {
     private String password;
     private Session session;
     private final static String Tag = "EmailSender";
+    private Multipart _multipart;
 
     static {
         Security.addProvider(new me.zhenning.JSSEProvider());
@@ -33,6 +37,7 @@ public class EmailSender extends javax.mail.Authenticator {
     public EmailSender(String user, String password) {
         this.user = user;
         this.password = password;
+        Log.d(Tag, "EmailSender");
 
         Properties props = new Properties();
         props.setProperty("mail.transport.protocol", "smtp");
@@ -49,24 +54,37 @@ public class EmailSender extends javax.mail.Authenticator {
     }
 
     protected PasswordAuthentication getPasswordAuthentication() {
+        Log.d(Tag, "getPasswordAuthentication");
         return new PasswordAuthentication(user, password);
     }
 
     public synchronized void sendMail(String subject, String body, String sender, String recipients) throws Exception {
         try{
-            MimeMessage message = new MimeMessage(session);
+            final MimeMessage message = new MimeMessage(session);
             DataHandler handler = new DataHandler(new ByteArrayDataSource(body.getBytes(), "text/plain"));
-            message.setSender(new InternetAddress(sender));
+            message.setFrom(new InternetAddress(sender));
             message.setSubject(subject);
             message.setDataHandler(handler);
             if (recipients.indexOf(',') > 0)
                 message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipients));
             else
                 message.setRecipient(Message.RecipientType.TO, new InternetAddress(recipients));
-            Transport.send(message);
-        }catch(Exception e){
+            Thread EmailThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try{
+                        Transport.send(message);
+                    }catch (Exception e){
+                        Log.e("Transport Error", e.getMessage(), e);
+                    }
+                }
+            });
+            EmailThread.start();
 
+        }catch(Exception e){
+            Log.e("SendMail", e.getMessage(), e);
         }
+
     }
 
     public class ByteArrayDataSource implements DataSource {
